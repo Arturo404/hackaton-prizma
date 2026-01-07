@@ -5,11 +5,10 @@ from transformers import AutoProcessor, AutoModelForZeroShotObjectDetection
 
 # ---- Config ----
 MODEL_ID = "IDEA-Research/grounding-dino-base"  # common baseline checkpoint :contentReference[oaicite:1]{index=1}
-IMAGE_PATH = "images/first_center.jpeg"
 
 # Important: prompts are typically lowercase and end with a period.
 # You can provide multiple separated by periods. :contentReference[oaicite:2]{index=2}
-TEXT_PROMPT = "pen cap. cap of a pen. plastic pen cap."
+TEXT_PROMPT = "plastic pen cap."
 
 BOX_THRESHOLD = 0.25   # raise to reduce false positives
 TEXT_THRESHOLD = 0.25  # raise to be stricter about matching words
@@ -40,54 +39,9 @@ def _get_text_size(draw, text, font):
         pass
     return (len(text) * 6, 11)
 
-# ---- Load model + processor ----
-processor = AutoProcessor.from_pretrained(MODEL_ID)
-model = AutoModelForZeroShotObjectDetection.from_pretrained(MODEL_ID).to(device)
 
-# # ---- Load image ----
-# image = Image.open(IMAGE_PATH).convert("RGB")
 
-# # ---- Prepare inputs ----
-# inputs = processor(images=image, text=TEXT_PROMPT, return_tensors="pt").to(device)
-
-# # ---- Inference ----
-# with torch.no_grad():
-#     outputs = model(**inputs)
-
-# # ---- Post-process to boxes in image coordinates ----
-# # GroundingDinoProcessor has a helper for grounded object detection post-processing. :contentReference[oaicite:3]{index=3}
-# results = processor.post_process_grounded_object_detection(
-#     outputs=outputs,
-#     inputs=inputs,
-#     box_threshold=BOX_THRESHOLD,
-#     text_threshold=TEXT_THRESHOLD,
-#     target_sizes=[image.size[::-1]]  # (height, width)
-# )
-
-# detections = results[0]
-# boxes = detections["boxes"]      # (N, 4) in xyxy
-# scores = detections["scores"]    # (N,)
-# labels = detections["labels"]    # list of strings
-
-# print(f"Found {len(boxes)} candidate boxes")
-# for i in range(len(boxes)):
-#     print(i, labels[i], float(scores[i]), boxes[i].tolist())
-
-# # ---- Draw boxes ----
-# draw = ImageDraw.Draw(image)
-# for box, score, label in zip(boxes, scores, labels):
-#     x1, y1, x2, y2 = box.tolist()
-#     draw.rectangle([x1, y1, x2, y2], width=3)
-#     draw.text((x1, max(0, y1 - 12)), f"{label} {float(score):.2f}")
-
-# out_path = "out_detected.jpg"
-# image.save(out_path)
-# print("Saved:", out_path)
-
-images_paths_in_order = ['images/1.jpeg', 'images/2.jpeg', 'images/3.jpeg', 'images/4.jpeg']
-images_in_order = [Image.open(image_path).convert("RGB") for image_path in images_paths_in_order]
-
-def get_object_bounding_box(images, text_prompt):
+def get_object_bounding_box(images, text_prompt, processor, model):
     top_detections = []
     for image in images:
         inputs = processor(images=image, text=text_prompt, return_tensors="pt").to(device)
@@ -124,7 +78,14 @@ def get_object_bounding_box(images, text_prompt):
     return top_detections
 
 
-detections = get_object_bounding_box(images_in_order, TEXT_PROMPT)
+images_paths_in_order = ['images/1.jpeg', 'images/2.jpeg', 'images/3.jpeg', 'images/4.jpeg', 'images/5.jpeg']
+images_in_order = [Image.open(image_path).convert("RGB") for image_path in images_paths_in_order]
+
+# ---- Load model + processor ----
+processor = AutoProcessor.from_pretrained(MODEL_ID)
+model = AutoModelForZeroShotObjectDetection.from_pretrained(MODEL_ID).to(device)
+
+detections = get_object_bounding_box(images_in_order, TEXT_PROMPT, processor, model)
 for idx, det in enumerate(detections):
     image = images_in_order[idx]
     draw = ImageDraw.Draw(image)
