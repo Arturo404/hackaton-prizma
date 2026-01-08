@@ -1,52 +1,67 @@
+import base64
+import io
+
+from PIL import Image
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-import cv2
-import numpy as np
 import uvicorn
 
+from api import update_flying_session, open_flying_session
+
 app = FastAPI()
+archive = []
 
 
 @app.websocket("/ws/stream")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    print("Client connected and ready to stream.")
-
     try:
+        session_id = None
         while True:
-            # קבלת התמונה כבייטס (Binary Data) - הדרך היעילה ביותר
-            data = await websocket.receive_bytes()
+            # קבלת ה-JSON מהלקוח
+            data = await websocket.receive_json()
 
-            # המרת הבייטס למערך נומפי (Numpy Array)
-            nparr = np.frombuffer(data, np.uint8)
+            # 1. פענוח ה-Base64 לבייטים
+            img_base64 = data.get("frame")
+            img_bytes = base64.b64decode(img_base64)
 
-            # פענוח התמונה (Decoding)
-            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            # 2. המרה לאובייקט Pillow
+            image = Image.open(io.BytesIO(img_bytes))
 
-            if frame is not None:
-                # --- כאן נכנסת הפונקציה שלך לעיבוד התמונה ---
-                # דוגמה: בדיקת רזולוציה
-                h, w, _ = frame.shape
+            # 3. חילוץ נתוני המטא-דאטה
+            timestamp = data.get("timestamp")
+            drone_width_cm = data.get("drone_width_cm")
+            location = data.get("start_location")  # {lat: 32.1, lon: 34.8}
 
-                # החזרת אישור או תוצאה מהירה ללקוח
+            if image is not None:
+                # כאן יבוא עיבוד התמונה שלך
+                print(f"Frame received at {timestamp} from {location}")
+                if session_id:
+                    processed_location, timestamp = update_flying_session(session_id, image, timestamp)
+                else:
+                    session_id, processed_location = open_flying_session(location, drone_width_cm, image)
+
+                archive.append({"location": processed_location, "timestamp": timestamp})
+
+                # החזרת תשובה ללקוח
                 await websocket.send_json({
-                    "status": "received",
-                    "resolution": f"{w}x{h}"
+                    "status": "success",
+                    "received_at": timestamp
                 })
 
-                # אופציונלי: הצגת התמונה על שרת מקומי (לצורכי דיבאג בלבד)
-                # cv2.imshow("Server Stream", frame)
-                # cv2.waitKey(1)
-            else:
-                await websocket.send_json({"error": "Failed to decode image"})
-
     except WebSocketDisconnect:
-        print("Client disconnected.")
+        print("Client disconnected")
     except Exception as e:
-        print(f"Error occurred: {e}")
+        print(f"Error: {e}")
+
 
 @app.get("/")
 async def health_check():
     return {"status": "healthy", "uptime": "ok"}
+
+@app.get("/end")
+async def end_connection():
+    return archive, 200
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

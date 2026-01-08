@@ -138,19 +138,19 @@ def compute_center_displacements(starting_center, detections, focal_length):
 
 
 
-sample_detections = [
-    {'label': 'phone', 'score': 0.85, 'box': [40.723670959472656, 874.839111328125, 821.624267578125, 1276.054443359375]},
-    {'label': 'phone', 'score': 0.85, 'box': [174.7002716064453, 913.072021484375, 753.0581665039062, 1206.306396484375]},
-    {'label': 'phone', 'score': 0.85, 'box': [324.2016296386719, 922.209716796875, 661.7896728515625, 1085.3814697265625]},
-]
-
-focal_length = compute_focal_length(
-    sample_detections[0]['box'],
-    PHONE_REAL_WIDTH_MM,
-    330.0
-)
-
-print(f"Computed focal length: {focal_length:.2f} mm")
+# sample_detections = [
+#     {'label': 'phone', 'score': 0.85, 'box': [40.723670959472656, 874.839111328125, 821.624267578125, 1276.054443359375]},
+#     {'label': 'phone', 'score': 0.85, 'box': [174.7002716064453, 913.072021484375, 753.0581665039062, 1206.306396484375]},
+#     {'label': 'phone', 'score': 0.85, 'box': [324.2016296386719, 922.209716796875, 661.7896728515625, 1085.3814697265625]},
+# ]
+#
+# focal_length = compute_focal_length(
+#     sample_detections[0]['box'],
+#     PHONE_REAL_WIDTH_MM,
+#     330.0
+# )
+#
+# print(f"Computed focal length: {focal_length:.2f} mm")
 
 # for idx, det in enumerate(sample_detections):
 #     if det is None:

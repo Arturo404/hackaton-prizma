@@ -5,16 +5,19 @@ from integration import get_object_center, get_updated_location
 
 flying_sessions = {}
 
-def open_flying_session(starting_location, drone_width_cm, first_frame, timestamp):
+def open_flying_session(starting_location, drone_width_cm, first_frame):
     """
     Simulate opening a flying session with given starting location and focal length.
     
     Args:
         starting_location (tuple): (x, y, z) in mm
         focal_length (float): Focal length in mm
-    
+        :param starting_location:
+        :param drone_width_cm:
+        :param first_frame:
+
     Returns:
-        dict: Session info
+        str: Session info
     """
 
     session_id = uuid4().hex
@@ -30,7 +33,7 @@ def open_flying_session(starting_location, drone_width_cm, first_frame, timestam
     flying_sessions[session_id] = current_flying_session
 
     print(f"Flying session opened at location {starting_location} with drone width {drone_width_cm} cm")
-    return session_id
+    return session_id, starting_location
 
 
 def update_flying_session(session_id, frame, timestamp):
