@@ -166,6 +166,7 @@ if __name__ == "__main__":
         distance_mm = compute_distance_from_camera(bbox, PHONE_REAL_WIDTH_MM, CAMERA_FOCAL_LENGTH_MM)
         if starting_center is None:
             starting_center = center
+            pixel_dx, pixel_dy = 0, 0
             dx, dy = 0, 0
         else:
             pixel_dx = center[0] - starting_center[0]
@@ -177,22 +178,36 @@ if __name__ == "__main__":
         print(f"Frame {idx + 1}:")
         print(f"  Detection time: {elapsed:.3f} seconds")
         print(f"  Center: ({center[0]:.1f}, {center[1]:.1f}) px")
+        print(f"  Displacement px: ({pixel_dx:.2f}, {pixel_dy:.2f}) px")
         print(f"  Displacement: ({dx:.2f}, {dy:.2f}) mm")
         print(f"  Position: ({current_position[0]:.2f}, {current_position[1]:.2f}, {distance_mm:.2f}) mm")
+
         # Annotate image
         draw = ImageDraw.Draw(img)
-        font = ImageFont.load_default()
+        # Try to use a large font for readability
+        try:
+            font = ImageFont.truetype("arial.ttf", 36)
+        except Exception:
+            font = ImageFont.load_default()
         x1, y1, x2, y2 = bbox
-        draw.rectangle([x1, y1, x2, y2], outline="red", width=3)
-        draw.ellipse([center[0]-5, center[1]-5, center[0]+5, center[1]+5], fill="blue")
+        draw.rectangle([x1, y1, x2, y2], outline="red", width=4)
+        draw.ellipse([center[0]-8, center[1]-8, center[0]+8, center[1]+8], fill="blue")
         text_lines = [
             f"Center: ({center[0]:.1f}, {center[1]:.1f}) px",
+            f"Displacement px: ({pixel_dx:.2f}, {pixel_dy:.2f}) px",
+            f"Displacement: ({dx:.2f}, {dy:.2f}) mm",
             f"Position: ({current_position[0]:.2f}, {current_position[1]:.2f}, {distance_mm:.2f}) mm"
         ]
-        y_offset = y1 - 40
+        # Draw a filled rectangle as background for text for readability
+        text_bg_height = (len(text_lines) * 44) + 10
+        text_bg_width = max([draw.textlength(line, font=font) for line in text_lines]) + 20
+        text_x = x1
+        text_y = max(0, y1 - text_bg_height - 10)
+        draw.rectangle([text_x, text_y, text_x + text_bg_width, text_y + text_bg_height], fill="black")
+        y_offset = text_y + 5
         for line in text_lines:
-            draw.text((x1, y_offset), line, fill="white", font=font)
-            y_offset += 15
+            draw.text((text_x + 10, y_offset), line, fill="white", font=font)
+            y_offset += 44
         annotated_path = os.path.join(annotated_folder, f"annotated_frame_{idx+1:04d}.jpg")
         img.save(annotated_path)
         print(f"  Saved annotated image: {annotated_path}")
