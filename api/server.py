@@ -44,6 +44,9 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         print(f"Error occurred: {e}")
 
+@app.get("/")
+async def health_check():
+    return {"status": "healthy", "uptime": "ok"}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
