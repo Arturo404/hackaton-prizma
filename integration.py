@@ -10,8 +10,7 @@ sys.path.append('.')
 from image_processing import get_object_bounding_box, TEXT_PROMPT, processor, model
 
 # Import from location_computing
-from location_computing import PHONE_REAL_WIDTH_MM, compute_distance_from_camera, compute_real_length, get_bounding_box_center, compute_center_displacements
-from video_sampler import sample_video_frames
+from location_computing import compute_distance_from_camera, compute_real_length, get_bounding_box_center, compute_center_displacements
 
 CAMERA_FOCAL_LENGTH_MM = 1612.62
 
@@ -50,7 +49,7 @@ def detect_objects_in_images(images, text_prompt, processor, model):
     detections = get_object_bounding_box(images, text_prompt, processor, model)
     return detections
 
-def compute_frame_displacements(detections, focal_length):
+def compute_frame_displacements(detections, real_width, focal_length):
     """
     Compute displacements for each frame based on detections.
     
@@ -69,7 +68,7 @@ def compute_frame_displacements(detections, focal_length):
     # Use first detection's center as starting center
     starting_center = get_bounding_box_center(detections[0]['box'])
     
-    displacements = compute_center_displacements(starting_center, detections, focal_length)
+    displacements = compute_center_displacements(starting_center, detections, real_width, focal_length)
     return displacements
 
 def get_object_center(frame):

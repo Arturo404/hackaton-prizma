@@ -6,7 +6,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 import uvicorn
 
 from api_functions import update_flying_session, open_flying_session
-from location_computing import tuple_multiply, xyz_to_lla
+from location_computing import ecef_to_lla, tuple_multiply
 
 app = FastAPI()
 archive = []
@@ -43,10 +43,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     print("Updating existing flying session")
                     processed_location, timestamp = update_flying_session(session_id, image, timestamp)
                     print(f"Processed location: {processed_location} at timestamp {timestamp}")
-                    processed_location = tuple_multiply(processed_location, 0.001)  # Convert mm to meters
-                    x, y, z = processed_location
-                    lla_location = xyz_to_lla(x, y, z)
-                    archive.append({"location": lla_location, "timestamp": timestamp})
+                    archive.append({"location": processed_location, "timestamp": timestamp})
                 else:
                     print("Opening new flying session")
                     session_id, start_center = open_flying_session(location, drone_width_cm, image)

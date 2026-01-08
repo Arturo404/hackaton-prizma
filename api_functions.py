@@ -1,7 +1,7 @@
 from uuid import uuid4
 
 from integration import get_object_center, get_updated_location
-from location_computing import lla_to_xyz, tuple_multiply
+from location_computing import lla_to_ecef, lla_to_xyz, tuple_multiply
 
 
 flying_sessions = {}
@@ -23,11 +23,8 @@ def open_flying_session(starting_location, drone_width_cm, first_frame):
 
     starting_center = get_object_center(first_frame)
 
-    long, lat, alt = starting_location
-    starting_location_xyz = lla_to_xyz(long, lat, alt)
-    starting_location_xyz = tuple_multiply(starting_location_xyz, 1000)
     current_flying_session = {
-        'starting_location_xyz': starting_location_xyz,
+        'starting_location_xyz': starting_location,
         'starting_center': starting_center,
         'drone_width_cm': drone_width_cm
     }
@@ -54,6 +51,7 @@ def update_flying_session(session_id, frame, timestamp):
         print(f"Session ID {session_id} not found")
         return None
 
+    print(f"Updating flying session {session_id}")
     session = flying_sessions[session_id]
     starting_location = session['starting_location_xyz']
     starting_center = session['starting_center']

@@ -1,5 +1,6 @@
+import math
+
 # Configuration for phone and camera
-PHONE_REAL_WIDTH_MM = 159.8  # Real width of the phone in millimeters (adjust as needed)
 CAMERA_FOCAL_LENGTH_MM = 1386  # Focal length of the camera in millimeters (adjust as needed)
 
 def get_bounding_box_width_pixels(bbox):
@@ -96,7 +97,7 @@ def compute_real_length(pixel_length, distance, focal_length):
     """
     return (pixel_length * distance) / focal_length
 
-def compute_center_displacements(starting_center, detections, focal_length):
+def compute_center_displacements(starting_center, detections, real_width, focal_length):
     """
     Compute displacements of object centers from starting position, converted to real mm.
     
@@ -120,7 +121,7 @@ def compute_center_displacements(starting_center, detections, focal_length):
         
         bbox = det['box']
         cx, cy = get_bounding_box_center(bbox)
-        distance_mm = compute_distance_from_camera(bbox, PHONE_REAL_WIDTH_MM, focal_length)
+        distance_mm = compute_distance_from_camera(bbox, real_width, focal_length)
 
         # Displacement in pixels
         pixel_dx = cx - start_cx
@@ -158,31 +159,49 @@ def lla_to_xyz(longitude, latitude, altitude):
     return x, y, z
 
 
-def xyz_to_lla(x, y, z):
-    """
-    Convert x, y, z (ECEF) to longitude, latitude, altitude (WGS84).
-    Args:
-        x (float): X coordinate in meters
-        y (float): Y coordinate in meters
-        z (float): Z coordinate in meters
-    Returns:
-        tuple: (longitude, latitude, altitude) in degrees, degrees, meters
-    """
-    import math
-    # WGS84 ellipsoid constants
-    a = 6378137.0  # semi-major axis (meters)
-    e2 = 6.69437999014e-3  # first eccentricity squared
-    b = a * math.sqrt(1 - e2)
-    ep = math.sqrt((a**2 - b**2) / b**2)
-    p = math.sqrt(x**2 + y**2)
-    th = math.atan2(a * z, b * p)
-    lon = math.atan2(y, x)
-    lat = math.atan2(z + ep**2 * b * math.sin(th)**3, p - e2 * a * math.cos(th)**3)
-    N = a / math.sqrt(1 - e2 * math.sin(lat)**2)
-    alt = p / math.cos(lat) - N
-    lon_deg = math.degrees(lon)
+
+
+# WGS-84 ellipsoid constants
+A = 6378137.0            # semi-major axis (meters)
+F = 1 / 298.257223563    # flattening
+E2 = F * (2 - F)         # eccentricity squared
+
+
+def lla_to_ecef(lat_deg, lon_deg, alt_m):
+    lat = math.radians(lat_deg)
+    lon = math.radians(lon_deg)
+
+    sin_lat = math.sin(lat)
+    cos_lat = math.cos(lat)
+    sin_lon = math.sin(lon)
+    cos_lon = math.cos(lon)
+
+    # Radius of curvature in the prime vertical
+    N = A / math.sqrt(1 - E2 * sin_lat**2)
+
+    X = (N + alt_m) * cos_lat * cos_lon
+    Y = (N + alt_m) * cos_lat * sin_lon
+    Z = (N * (1 - E2) + alt_m) * sin_lat
+
+    return X, Y, Z
+
+def ecef_to_lla(X, Y, Z):
+    lon = math.atan2(Y, X)
+
+    p = math.sqrt(X**2 + Y**2)
+    lat = math.atan2(Z, p * (1 - E2))  # initial guess
+
+    for _ in range(5):  # iterate to converge
+        sin_lat = math.sin(lat)
+        N = A / math.sqrt(1 - E2 * sin_lat**2)
+        alt = p / math.cos(lat) - N
+        lat = math.atan2(Z, p * (1 - E2 * N / (N + alt)))
+
     lat_deg = math.degrees(lat)
-    return lon_deg, lat_deg, alt
+    lon_deg = math.degrees(lon)
+
+    return lat_deg, lon_deg, alt
+
 
 def tuple_multiply(t, factor):
     """
