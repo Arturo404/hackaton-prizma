@@ -1,6 +1,6 @@
-# Configuration for pen cap and camera
-PEN_CAP_REAL_WIDTH_MM = 20.0  # Real width of the pen cap in millimeters (adjust as needed)
-CAMERA_FOCAL_LENGTH_MM = 26.0  # Focal length of the camera in millimeters (adjust as needed)
+# Configuration for phone and camera
+PHONE_REAL_WIDTH_MM = 159.8  # Real width of the phone in millimeters (adjust as needed)
+CAMERA_FOCAL_LENGTH_MM = 1386  # Focal length of the camera in millimeters (adjust as needed)
 
 def get_bounding_box_width_pixels(bbox):
     """
@@ -46,7 +46,7 @@ def compute_object_distance(pixel_width, real_width, focal_length):
         return float('inf')  # Avoid division by zero
     return (real_width * focal_length) / pixel_width
 
-def compute_pen_cap_distance(bbox, real_width, focal_length):
+def compute_distance_from_camera(bbox, real_width, focal_length):
     """
     Compute the distance of the pen cap from the camera using its bounding box.
     
@@ -58,7 +58,10 @@ def compute_pen_cap_distance(bbox, real_width, focal_length):
     Returns:
         float: Distance in millimeters
     """
+    print(f"Bounding box: {bbox}")
     pixel_width = get_bounding_box_width_pixels(bbox)
+    print(f"Pixel width: {pixel_width}")
+    print(f"Real width: {real_width}")
     return compute_object_distance(pixel_width, real_width, focal_length)
 
 def compute_focal_length(bbox, real_width, distance):
@@ -93,42 +96,95 @@ def compute_real_length(pixel_length, distance, focal_length):
     """
     return (pixel_length * distance) / focal_length
 
-# Example usage with detection results
-# To use real detections, run the cells from pen_cap_detection.ipynb first
-# or copy the get_object_bounding_box function and detections here.
+def compute_center_displacements(starting_center, detections, focal_length):
+    """
+    Compute displacements of object centers from starting position, converted to real mm.
+    
+    Args:
+        starting_location (tuple): (x, y, z) in mm, initial camera/object position
+        starting_center (tuple): (center_x, center_y) in pixels, initial center
+        detections (list): List of detection dicts with 'box' [x1,y1,x2,y2]
+        focal_length (float): Focal length in mm
+        distance (float): Distance from camera to object in mm (z from starting_location)
+    
+    Returns:
+        list: List of displacements as (dx_mm, dy_mm) for each detection
+    """
+    displacements = []
+    start_cx, start_cy = starting_center
+    
+    for det in detections:
+        if det is None:
+            displacements.append(None)
+            continue
+        
+        bbox = det['box']
+        cx, cy = get_bounding_box_center(bbox)
+        distance_mm = compute_distance_from_camera(bbox, PHONE_REAL_WIDTH_MM, focal_length)
 
-# Assuming detections from pen_cap_detection.ipynb
-# For demonstration, let's assume some sample detections
+        # Displacement in pixels
+        pixel_dx = cx - start_cx
+        pixel_dy = cy - start_cy
+        
+        # Convert to mm
+        real_dx = compute_real_length(pixel_dx, distance_mm, focal_length)
+        real_dy = compute_real_length(pixel_dy, distance_mm, focal_length)
+        
+        displacements.append((real_dx, real_dy))
+    
+    return displacements
+
+
+
+
+
 sample_detections = [
-    {'label': 'pen cap', 'score': 0.85, 'box': [644.2440185546875, 569.2691040039062, 767.0145263671875, 1077.2977294921875]},
-    {'label': 'pen cap', 'score': 0.92, 'box': [699.7681884765625, 953.6226196289062, 726.6387329101562, 1062.0035400390625]},
-    None,  # No detection
-    {'label': 'pen cap', 'score': 0.78, 'box': [679.7200317382812, 1296.2269287109375, 708.9035034179688, 1422.017578125]},
-    {'label': 'pen cap', 'score': 0.78, 'box': [716.9485473632812, 780.4949951171875, 733.974609375, 831.747314453125]},
-    {'label': 'pen cap', 'score': 0.78, 'box': [548.505615234375, 790.5347900390625, 673.2413330078125, 1317.199951171875]}
+    {'label': 'phone', 'score': 0.85, 'box': [40.723670959472656, 874.839111328125, 821.624267578125, 1276.054443359375]},
+    {'label': 'phone', 'score': 0.85, 'box': [174.7002716064453, 913.072021484375, 753.0581665039062, 1206.306396484375]},
+    {'label': 'phone', 'score': 0.85, 'box': [324.2016296386719, 922.209716796875, 661.7896728515625, 1085.3814697265625]},
 ]
 
-for idx, det in enumerate(sample_detections):
-    if det is None:
-        print(f"Image {idx + 1}: No detection")
-        continue
-    
-    bbox = det['box']
-    center_x, center_y = get_bounding_box_center(bbox)
-    distance_mm = compute_pen_cap_distance(bbox, PEN_CAP_REAL_WIDTH_MM, CAMERA_FOCAL_LENGTH_MM)
-    
-    
-    print(f"Image {idx + 1}:")
-    print(f"  Bounding box: {bbox}")
-    print(f"  Center: ({center_x:.1f}, {center_y:.1f}) px")
-    print(f"  Estimated distance: {distance_mm:.2f} mm")
-    
-    # Example: compute real height if we had pixel height
-    pixel_height = bbox[3] - bbox[1]  # y2 - y1
-    real_height_mm = compute_real_length(pixel_height, distance_mm, CAMERA_FOCAL_LENGTH_MM)
-    print(f"  Pixel height: {pixel_height:.2f} px -> Real height: {real_height_mm:.2f} mm")
-    print()
+focal_length = compute_focal_length(
+    sample_detections[0]['box'],
+    PHONE_REAL_WIDTH_MM,
+    330.0
+)
 
-# Additional example: compute focal length
-focal_length_computed = compute_focal_length([548.505615234375, 790.5347900390625, 673.2413330078125, 1317.199951171875], PEN_CAP_REAL_WIDTH_MM, 146)
-print(f"  Computed focal length: {focal_length_computed:.2f} mm")
+print(f"Computed focal length: {focal_length:.2f} mm")
+
+# for idx, det in enumerate(sample_detections):
+#     if det is None:
+#         print(f"Image {idx + 1}: No detection")
+#         continue
+    
+#     bbox = det['box']
+#     center_x, center_y = get_bounding_box_center(bbox)
+#     distance_mm = compute_distance_from_camera(bbox, PHONE_REAL_WIDTH_MM, focal_length)
+    
+    
+#     print(f"Image {idx + 1}:")
+#     print(f"  Bounding box: {bbox}")
+#     print(f"  Center: ({center_x:.1f}, {center_y:.1f}) px")
+#     print(f"  Estimated distance: {distance_mm:.2f} mm")
+
+
+
+# # Example: compute center displacements
+# starting_location = (0, 0, 330)  # Example starting position in mm
+# # Use the first detection's center as starting center
+# first_det = sample_detections[0]
+# if first_det:
+#     starting_center = get_bounding_box_center(first_det['box'])
+#     displacements = compute_center_displacements(starting_center, sample_detections, focal_length)
+    
+#     print("\nCenter displacements from starting position:")
+#     for idx, disp in enumerate(displacements):
+#         if disp is None:
+#             print(f"Image {idx + 1}: No detection")
+#         else:
+#             dx, dy = disp
+#             print(f"Image {idx + 1}: Displacement ({dx:.2f}, {dy:.2f}) mm")
+
+
+
+

@@ -29,5 +29,11 @@ Notes
 - The first run will download model weights — expect network and disk usage.
 - `image.show()` may fail in headless environments; annotated images are still saved to disk.
 
+Additional scripts
+- `location_computing.py`: Functions for computing distances, displacements, etc., from bounding boxes.
+- `video_sampler.py`: Sample frames from a video at a specified rate.
+
+  Usage: `python video_sampler.py <video_path> <output_folder> [--sample_rate 1.0] [--frame_skip 30]`
+
 Next steps
 - I can add a small script to run a single image or produce a combined CSV report of detections if you want.

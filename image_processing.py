@@ -8,7 +8,7 @@ MODEL_ID = "IDEA-Research/grounding-dino-base"  # common baseline checkpoint :co
 
 # Important: prompts are typically lowercase and end with a period.
 # You can provide multiple separated by periods. :contentReference[oaicite:2]{index=2}
-TEXT_PROMPT = "plastic pen cap."
+TEXT_PROMPT = "smartphone."
 
 BOX_THRESHOLD = 0.25   # raise to reduce false positives
 TEXT_THRESHOLD = 0.25  # raise to be stricter about matching words
@@ -78,36 +78,36 @@ def get_object_bounding_box(images, text_prompt, processor, model):
     return top_detections
 
 
-images_paths_in_order = ['images/1.jpeg', 'images/2.jpeg', 'images/3.jpeg', 'images/4.jpeg', 'images/5.jpeg']
+images_paths_in_order = ['images/1.jpeg', 'images/2.jpeg', 'images/3.jpeg']
 images_in_order = [Image.open(image_path).convert("RGB") for image_path in images_paths_in_order]
 
 # ---- Load model + processor ----
 processor = AutoProcessor.from_pretrained(MODEL_ID)
 model = AutoModelForZeroShotObjectDetection.from_pretrained(MODEL_ID).to(device)
 
-detections = get_object_bounding_box(images_in_order, TEXT_PROMPT, processor, model)
-for idx, det in enumerate(detections):
-    image = images_in_order[idx]
-    draw = ImageDraw.Draw(image)
-    font = ImageFont.load_default()
+# detections = get_object_bounding_box(images_in_order, TEXT_PROMPT, processor, model)
+# for idx, det in enumerate(detections):
+#     image = images_in_order[idx]
+#     draw = ImageDraw.Draw(image)
+#     font = ImageFont.load_default()
 
-    if det is None:
-        print(f"Image {idx + 1}: Found 0 candidate boxes")
-    else:
-        print(f"Image {idx + 1}: Found 1 candidate box")
-        print(det['label'], det['score'], det['box'])
-        x1, y1, x2, y2 = det['box']
-        draw.rectangle([x1, y1, x2, y2], outline="red", width=3)
-        text = f"{det['label']} {det['score']:.2f}"
-        text_w, text_h = _get_text_size(draw, text, font)
-        draw.rectangle([x1, max(0, y1 - text_h - 4), x1 + text_w + 4, y1], fill="red")
-        draw.text((x1 + 2, max(0, y1 - text_h - 4) + 2), text, fill="white", font=font)
+#     if det is None:
+#         print(f"Image {idx + 1}: Found 0 candidate boxes")
+#     else:
+#         print(f"Image {idx + 1}: Found 1 candidate box")
+#         print(det['label'], det['score'], det['box'])
+#         x1, y1, x2, y2 = det['box']
+#         draw.rectangle([x1, y1, x2, y2], outline="red", width=3)
+#         text = f"{det['label']} {det['score']:.2f}"
+#         text_w, text_h = _get_text_size(draw, text, font)
+#         draw.rectangle([x1, max(0, y1 - text_h - 4), x1 + text_w + 4, y1], fill="red")
+#         draw.text((x1 + 2, max(0, y1 - text_h - 4) + 2), text, fill="white", font=font)
 
-    out_path = f"out_detected_{idx+1}.jpg"
-    image.save(out_path)
-    print("Saved:", out_path)
-    try:
-        image.show()
-    except Exception:
-        # `show()` may fail in headless environments; ignore silently
-        pass
+#     out_path = f"out_detected_{idx+1}.jpg"
+#     image.save(out_path)
+#     print("Saved:", out_path)
+#     try:
+#         image.show()
+#     except Exception:
+#         # `show()` may fail in headless environments; ignore silently
+#         pass
