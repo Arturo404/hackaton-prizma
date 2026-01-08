@@ -5,6 +5,8 @@ from PIL import Image, ImageDraw, ImageFont
 import sys
 import time
 
+from video_sampler import sample_video_frames
+
 # Import from image_processing
 sys.path.append('.')
 from image_processing import get_object_bounding_box, TEXT_PROMPT, processor, model
@@ -114,26 +116,26 @@ def get_updated_location(frame, starting_location, object_width_mm, starting_cen
 
 
 
-# Main execution
+
 # if __name__ == "__main__":
-#     VIDEO_PATH = "video/phone_upward.mp4"  # Set your video path here
+#     VIDEO_PATH = "video/drone.mp4"  # Set your video path here
 #     OUTPUT_FOLDER = "output_folder"
 #     ANNOTATED_FOLDER = "annotated_frames"
-#
+
 #     # Sample video and get greyscale frames
 #     images = sample_video_frames(VIDEO_PATH, OUTPUT_FOLDER, sample_rate=1.0)
 #     print(f"Sampled {len(images)} greyscale frames from {VIDEO_PATH}")
-#
+
 #     if not images:
 #         print("No frames sampled from video.")
 #         sys.exit(1)
-#
+
 #     starting_location = (0, 0, 330)  # Starting position in mm
 #     starting_center = None
 #     current_position = starting_location
 #     annotated_folder = ANNOTATED_FOLDER
 #     os.makedirs(annotated_folder, exist_ok=True)
-#
+
 #     for idx, img in enumerate(images):
 #         start_time = time.time()
 #         detection = detect_objects_in_images([img], TEXT_PROMPT, processor, model)[0]
@@ -143,7 +145,7 @@ def get_updated_location(frame, starting_location, object_width_mm, starting_cen
 #             continue
 #         bbox = detection['box']
 #         center = get_bounding_box_center(bbox)
-#         distance_mm = compute_distance_from_camera(bbox, PHONE_REAL_WIDTH_MM, CAMERA_FOCAL_LENGTH_MM)
+#         distance_mm = compute_distance_from_camera(bbox, 320, CAMERA_FOCAL_LENGTH_MM)
 #         if starting_center is None:
 #             starting_center = center
 #             dx, dy = 0, 0
@@ -152,7 +154,7 @@ def get_updated_location(frame, starting_location, object_width_mm, starting_cen
 #             pixel_dy = center[1] - starting_center[1]
 #             dx = compute_real_length(pixel_dx, distance_mm, CAMERA_FOCAL_LENGTH_MM)
 #             dy = compute_real_length(pixel_dy, distance_mm, CAMERA_FOCAL_LENGTH_MM)
-#
+
 #         current_position = (starting_location[0] + dx, starting_location[1] + dy, distance_mm)
 #         print(f"Frame {idx + 1}:")
 #         print(f"  Detection time: {elapsed:.3f} seconds")
