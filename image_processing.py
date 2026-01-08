@@ -78,8 +78,8 @@ def get_object_bounding_box(images, text_prompt, processor, model):
     return top_detections
 
 
-images_paths_in_order = ['images/1.jpeg', 'images/2.jpeg', 'images/3.jpeg']
-images_in_order = [Image.open(image_path).convert("RGB") for image_path in images_paths_in_order]
+# images_paths_in_order = ['images/1.jpeg', 'images/2.jpeg', 'images/3.jpeg']
+# images_in_order = [Image.open(image_path).convert("RGB") for image_path in images_paths_in_order]
 
 # ---- Load model + processor ----
 processor = AutoProcessor.from_pretrained(MODEL_ID)

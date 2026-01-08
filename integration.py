@@ -108,110 +108,76 @@ def get_updated_location(frame, starting_location, object_width_mm, starting_cen
     print(f"  Displacement pixel: ({pixel_dx:.2f}, {pixel_dy:.2f}) px")
     print(f"  Displacement: ({dx:.2f}, {dy:.2f}) mm")
     print(f"  Position: ({current_position[0]:.2f}, {current_position[1]:.2f}, {distance_mm:.2f}) mm")
-    
-    # Annotate image
-    draw = ImageDraw.Draw(frame)
-    font = ImageFont.load_default()
-    x1, y1, x2, y2 = bbox
-    draw.rectangle([x1, y1, x2, y2], outline="red", width=3)
-    draw.ellipse([center[0]-5, center[1]-5, center[0]+5, center[1]+5], fill="blue")
-    text_lines = [
-        f"Center: ({center[0]:.1f}, {center[1]:.1f}) px",
-        f"Position: ({current_position[0]:.2f}, {current_position[1]:.2f}, {distance_mm:.2f}) mm"
-    ]
-    y_offset = y1 - 40
-    for line in text_lines:
-        draw.text((x1, y_offset), line, fill="white", font=font)
-        y_offset += 15
-    annotated_path = os.path.join(annotated_folder, f"annotated_frame_{idx+1:04d}.jpg")
-    frame.save(annotated_path)
-    print(f"  Saved annotated image: {annotated_path}")
-    try:
-        frame.show()
-    except Exception:
-        pass
+
+    return current_position
+
 
 
 
 
 # Main execution
-if __name__ == "__main__":
-    VIDEO_PATH = "video/phone_upward.mp4"  # Set your video path here
-    OUTPUT_FOLDER = "output_folder"
-    ANNOTATED_FOLDER = "annotated_frames"
-    
-    # Sample video and get greyscale frames
-    images = sample_video_frames(VIDEO_PATH, OUTPUT_FOLDER, sample_rate=1.0)
-    print(f"Sampled {len(images)} greyscale frames from {VIDEO_PATH}")
-    
-    if not images:
-        print("No frames sampled from video.")
-        sys.exit(1)
-    
-    starting_location = (0, 0, 330)  # Starting position in mm
-    starting_center = None
-    current_position = starting_location
-    annotated_folder = ANNOTATED_FOLDER
-    os.makedirs(annotated_folder, exist_ok=True)
-    
-    for idx, img in enumerate(images):
-        start_time = time.time()
-        detection = detect_objects_in_images([img], TEXT_PROMPT, processor, model)[0]
-        elapsed = time.time() - start_time
-        if detection is None:
-            print(f"Frame {idx + 1}: No detection")
-            continue
-        bbox = detection['box']
-        center = get_bounding_box_center(bbox)
-        distance_mm = compute_distance_from_camera(bbox, PHONE_REAL_WIDTH_MM, CAMERA_FOCAL_LENGTH_MM)
-        if starting_center is None:
-            starting_center = center
-            pixel_dx, pixel_dy = 0, 0
-            dx, dy = 0, 0
-        else:
-            pixel_dx = center[0] - starting_center[0]
-            pixel_dy = center[1] - starting_center[1]
-            dx = compute_real_length(pixel_dx, distance_mm, CAMERA_FOCAL_LENGTH_MM)
-            dy = compute_real_length(pixel_dy, distance_mm, CAMERA_FOCAL_LENGTH_MM)
-
-        current_position = (starting_location[0] + dx, starting_location[1] + dy, distance_mm)
-        print(f"Frame {idx + 1}:")
-        print(f"  Detection time: {elapsed:.3f} seconds")
-        print(f"  Center: ({center[0]:.1f}, {center[1]:.1f}) px")
-        print(f"  Displacement px: ({pixel_dx:.2f}, {pixel_dy:.2f}) px")
-        print(f"  Displacement: ({dx:.2f}, {dy:.2f}) mm")
-        print(f"  Position: ({current_position[0]:.2f}, {current_position[1]:.2f}, {distance_mm:.2f}) mm")
-
-        # Annotate image
-        draw = ImageDraw.Draw(img)
-        # Try to use a large font for readability
-        try:
-            font = ImageFont.truetype("arial.ttf", 36)
-        except Exception:
-            font = ImageFont.load_default()
-        x1, y1, x2, y2 = bbox
-        draw.rectangle([x1, y1, x2, y2], outline="red", width=4)
-        draw.ellipse([center[0]-8, center[1]-8, center[0]+8, center[1]+8], fill="blue")
-        text_lines = [
-            f"Center: ({center[0]:.1f}, {center[1]:.1f}) px",
-            f"Displacement px: ({pixel_dx:.2f}, {pixel_dy:.2f}) px",
-            f"Displacement: ({dx:.2f}, {dy:.2f}) mm",
-            f"Position: ({current_position[0]:.2f}, {current_position[1]:.2f}, {distance_mm:.2f}) mm"
-        ]
-        # Draw a filled rectangle as background for text for readability
-        text_bg_height = (len(text_lines) * 44) + 10
-        text_bg_width = max([draw.textlength(line, font=font) for line in text_lines]) + 20
-        text_x = x1
-        text_y = max(0, y1 - text_bg_height - 10)
-        draw.rectangle([text_x, text_y, text_x + text_bg_width, text_y + text_bg_height], fill="black")
-        y_offset = text_y + 5
-        for line in text_lines:
-            draw.text((text_x + 10, y_offset), line, fill="white", font=font)
-            y_offset += 44
-        annotated_path = os.path.join(annotated_folder, f"annotated_frame_{idx+1:04d}.jpg")
-        img.save(annotated_path)
-        print(f"  Saved annotated image: {annotated_path}")
-        try:
-            img.show()
-        except Exception:
-            pass
+# if __name__ == "__main__":
+#     VIDEO_PATH = "video/phone_upward.mp4"  # Set your video path here
+#     OUTPUT_FOLDER = "output_folder"
+#     ANNOTATED_FOLDER = "annotated_frames"
+#
+#     # Sample video and get greyscale frames
+#     images = sample_video_frames(VIDEO_PATH, OUTPUT_FOLDER, sample_rate=1.0)
+#     print(f"Sampled {len(images)} greyscale frames from {VIDEO_PATH}")
+#
+#     if not images:
+#         print("No frames sampled from video.")
+#         sys.exit(1)
+#
+#     starting_location = (0, 0, 330)  # Starting position in mm
+#     starting_center = None
+#     current_position = starting_location
+#     annotated_folder = ANNOTATED_FOLDER
+#     os.makedirs(annotated_folder, exist_ok=True)
+#
+#     for idx, img in enumerate(images):
+#         start_time = time.time()
+#         detection = detect_objects_in_images([img], TEXT_PROMPT, processor, model)[0]
+#         elapsed = time.time() - start_time
+#         if detection is None:
+#             print(f"Frame {idx + 1}: No detection")
+#             continue
+#         bbox = detection['box']
+#         center = get_bounding_box_center(bbox)
+#         distance_mm = compute_distance_from_camera(bbox, PHONE_REAL_WIDTH_MM, CAMERA_FOCAL_LENGTH_MM)
+#         if starting_center is None:
+#             starting_center = center
+#             dx, dy = 0, 0
+#         else:
+#             pixel_dx = center[0] - starting_center[0]
+#             pixel_dy = center[1] - starting_center[1]
+#             dx = compute_real_length(pixel_dx, distance_mm, CAMERA_FOCAL_LENGTH_MM)
+#             dy = compute_real_length(pixel_dy, distance_mm, CAMERA_FOCAL_LENGTH_MM)
+#
+#         current_position = (starting_location[0] + dx, starting_location[1] + dy, distance_mm)
+#         print(f"Frame {idx + 1}:")
+#         print(f"  Detection time: {elapsed:.3f} seconds")
+#         print(f"  Center: ({center[0]:.1f}, {center[1]:.1f}) px")
+#         print(f"  Displacement: ({dx:.2f}, {dy:.2f}) mm")
+#         print(f"  Position: ({current_position[0]:.2f}, {current_position[1]:.2f}, {distance_mm:.2f}) mm")
+#         # Annotate image
+#         draw = ImageDraw.Draw(img)
+#         font = ImageFont.load_default()
+#         x1, y1, x2, y2 = bbox
+#         draw.rectangle([x1, y1, x2, y2], outline="red", width=3)
+#         draw.ellipse([center[0]-5, center[1]-5, center[0]+5, center[1]+5], fill="blue")
+#         text_lines = [
+#             f"Center: ({center[0]:.1f}, {center[1]:.1f}) px",
+#             f"Position: ({current_position[0]:.2f}, {current_position[1]:.2f}, {distance_mm:.2f}) mm"
+#         ]
+#         y_offset = y1 - 40
+#         for line in text_lines:
+#             draw.text((x1, y_offset), line, fill="white", font=font)
+#             y_offset += 15
+#         annotated_path = os.path.join(annotated_folder, f"annotated_frame_{idx+1:04d}.jpg")
+#         img.save(annotated_path)
+#         print(f"  Saved annotated image: {annotated_path}")
+#         try:
+#             img.show()
+#         except Exception:
+#             pass
