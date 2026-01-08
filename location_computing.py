@@ -135,8 +135,65 @@ def compute_center_displacements(starting_center, detections, focal_length):
     return displacements
 
 
+def lla_to_xyz(longitude, latitude, altitude):
+    """
+    Convert longitude, latitude, altitude (WGS84) to x, y, z (ECEF).
+    Args:
+        longitude (float): Longitude in degrees
+        latitude (float): Latitude in degrees
+        altitude (float): Altitude in meters
+    Returns:
+        tuple: (x, y, z) in meters
+    """
+    import math
+    # WGS84 ellipsoid constants
+    a = 6378137.0  # semi-major axis (meters)
+    e2 = 6.69437999014e-3  # first eccentricity squared
+    lat_rad = math.radians(latitude)
+    lon_rad = math.radians(longitude)
+    N = a / math.sqrt(1 - e2 * (math.sin(lat_rad) ** 2))
+    x = (N + altitude) * math.cos(lat_rad) * math.cos(lon_rad)
+    y = (N + altitude) * math.cos(lat_rad) * math.sin(lon_rad)
+    z = (N * (1 - e2) + altitude) * math.sin(lat_rad)
+    return x, y, z
 
 
+def xyz_to_lla(x, y, z):
+    """
+    Convert x, y, z (ECEF) to longitude, latitude, altitude (WGS84).
+    Args:
+        x (float): X coordinate in meters
+        y (float): Y coordinate in meters
+        z (float): Z coordinate in meters
+    Returns:
+        tuple: (longitude, latitude, altitude) in degrees, degrees, meters
+    """
+    import math
+    # WGS84 ellipsoid constants
+    a = 6378137.0  # semi-major axis (meters)
+    e2 = 6.69437999014e-3  # first eccentricity squared
+    b = a * math.sqrt(1 - e2)
+    ep = math.sqrt((a**2 - b**2) / b**2)
+    p = math.sqrt(x**2 + y**2)
+    th = math.atan2(a * z, b * p)
+    lon = math.atan2(y, x)
+    lat = math.atan2(z + ep**2 * b * math.sin(th)**3, p - e2 * a * math.cos(th)**3)
+    N = a / math.sqrt(1 - e2 * math.sin(lat)**2)
+    alt = p / math.cos(lat) - N
+    lon_deg = math.degrees(lon)
+    lat_deg = math.degrees(lat)
+    return lon_deg, lat_deg, alt
+
+def tuple_multiply(t, factor):
+    """
+    Multiply each element of a tuple by a float factor.
+    Args:
+        t (tuple): Tuple of floats
+        factor (float): Factor to multiply
+    Returns:
+        tuple: Resulting tuple
+    """
+    return tuple(x * factor for x in t)
 
 # sample_detections = [
 #     {'label': 'phone', 'score': 0.85, 'box': [40.723670959472656, 874.839111328125, 821.624267578125, 1276.054443359375]},

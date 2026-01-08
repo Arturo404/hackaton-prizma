@@ -6,6 +6,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 import uvicorn
 
 from api_functions import update_flying_session, open_flying_session
+from location_computing import tuple_multiply, xyz_to_lla
 
 app = FastAPI()
 archive = []
@@ -13,9 +14,12 @@ archive = []
 
 @app.websocket("/ws/stream")
 async def websocket_endpoint(websocket: WebSocket):
+    global archive
     await websocket.accept()
     try:
         session_id = None
+        start_center = None
+        archive = []
         while True:
             # קבלת ה-JSON מהלקוח
             data = await websocket.receive_json()
@@ -36,11 +40,20 @@ async def websocket_endpoint(websocket: WebSocket):
                 # כאן יבוא עיבוד התמונה שלך
                 print(f"Frame received at {timestamp} from {location}")
                 if session_id:
+                    print("Updating existing flying session")
                     processed_location, timestamp = update_flying_session(session_id, image, timestamp)
+                    print(f"Processed location: {processed_location} at timestamp {timestamp}")
+                    processed_location = tuple_multiply(processed_location, 0.001)  # Convert mm to meters
+                    x, y, z = processed_location
+                    lla_location = xyz_to_lla(x, y, z)
+                    archive.append({"location": lla_location, "timestamp": timestamp})
                 else:
-                    session_id, processed_location = open_flying_session(location, drone_width_cm, image)
+                    print("Opening new flying session")
+                    session_id, start_center = open_flying_session(location, drone_width_cm, image)
+                    archive.append({"location": location, "timestamp": timestamp})
+                    print(f"New flying session, Session ID: {session_id}, Start Center: {start_center}")
 
-                archive.append({"location": processed_location, "timestamp": timestamp})
+                
 
                 # החזרת תשובה ללקוח
                 await websocket.send_json({

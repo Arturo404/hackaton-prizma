@@ -6,7 +6,7 @@ def image_to_base64(image_path):
     return encoded
 
 # Example usage
-image_path = "images/1.jpeg"
+image_path = "images/3.jpeg"
 image_b64 = image_to_base64(image_path)
 
 payload = {
@@ -16,6 +16,6 @@ payload = {
 
 # Store result in file
 import json
-with open("result.json", "w") as f:
+with open("result3.json", "w") as f:
     json.dump(payload, f, indent=2)
 print("Payload stored in result.json")
