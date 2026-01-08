@@ -8,7 +8,7 @@ MODEL_ID = "IDEA-Research/grounding-dino-base"  # common baseline checkpoint :co
 
 # Important: prompts are typically lowercase and end with a period.
 # You can provide multiple separated by periods. :contentReference[oaicite:2]{index=2}
-TEXT_PROMPT = "phone."
+TEXT_PROMPT = "drone."
 
 BOX_THRESHOLD = 0.25   # raise to reduce false positives
 TEXT_THRESHOLD = 0.25  # raise to be stricter about matching words
