@@ -5,7 +5,7 @@ from PIL import Image
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 import uvicorn
 
-from api import update_flying_session, open_flying_session
+from api_functions import update_flying_session, open_flying_session
 
 app = FastAPI()
 archive = []
